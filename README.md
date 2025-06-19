@@ -77,7 +77,7 @@ reactmesh-architecture/
 
 ## 🧠 Designed by
 
-**Oscar Domínguez Díaz**  
+**Nestor Oscar Domínguez Díaz**  
 Creator of Diagnosisfy (Private SaaS project)  
 [GitHub Profile](https://github.com/tu-usuario)  
 Senior Fullstack Developer & Software Architect
