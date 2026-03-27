@@ -20,10 +20,46 @@ It’s a **declarative, logic-free layer** focused exclusively on rendering. All
 
 ---
 
+## 🔑 Component + Container Pattern (Redux)
+
+When using Redux, each component is split into two files:
+
+```text
+view/
+└── <componentName>/
+    ├── <componentName>.tsx          # Pure presentational component — no Redux
+    └── <componentName>Container.ts  # connect() only — no logic
+```
+
+**`<componentName>.tsx`** receives everything via props. No `useSelector`, no `useDispatch`.
+
+**`<componentName>Container.ts`** is the only place where action creators are imported outside `store/`. It wires the component to Redux via `connect()`.
+
+```ts
+// appointmentContainer.ts
+const mapStateToProps = (state: RootState) => ({
+  appointments: state.appointment.list,
+  loading: state.appointment.loading,
+});
+
+const mapDispatchToProps = {
+  loadAppointments: loadAppointmentsStart,
+  deleteAppointment: deleteAppointmentStart,
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(Appointment);
+```
+
+The view component receives `appointments`, `loading`, `loadAppointments`, and `deleteAppointment` as plain props — it has no knowledge of Redux. This makes it trivial to test by rendering with mock props.
+
+**Hooks receive callbacks as params injected by the container** — they never call `useDispatch` directly. See [`hooks/`](./hooks.md) for details.
+
+---
+
 ## ✅ Do
 
 - Use only props or `hooks/` to get handlers and state
-- Split visual responsibilities into reusable components
+- Split each connected component into component + container
 - Keep render logic clean and focused
 
 ## 🚫 Don’t
@@ -31,6 +67,7 @@ It’s a **declarative, logic-free layer** focused exclusively on rendering. All
 - Call business logic or validations directly
 - Perform async operations
 - Format or transform data inside components
+- Use `useSelector` or `useDispatch` in view components or hooks
 
 ---
 
