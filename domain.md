@@ -145,9 +145,9 @@ export const ShiftPortal = {
 
 ### How portals are consumed — dependency injection
 
-Portal functions must be consumed via **dependency injection**, not imported directly in hooks or view components. The container is the injection point: it imports from the portal and passes the functions as props or callbacks.
+Portal functions must be consumed via **dependency injection**, not imported directly in hooks. The **view component** is the injection point: it imports from the portal and passes the functions as props to its hooks.
 
-This is consistent with the existing rule that hooks never import action creators directly — they receive them as parameters from the container. The same applies to portal functions.
+The container is not the injection point for portal functions. Its only responsibility is Redux wiring (state + actions). `mapDispatchToProps` is reserved for Redux action creators — putting non-action logic there violates its semantic purpose.
 
 ```ts
 // ❌ Direct import in a hook — creates coupling
@@ -156,6 +156,12 @@ import { ShiftPortal } from '@/features/shift/domain/shiftPortal';
 const useAppointmentForm = () => {
   const valid = ShiftPortal.isValid(shift); // hook is coupled to the portal
 };
+
+// ❌ Portal import in the container — wrong layer
+// appointmentFormContainer.ts
+const mapDispatchToProps = () => ({
+  isShiftValid: ShiftPortal.isValid, // mapDispatchToProps is for Redux actions, not domain logic
+});
 
 // ✅ DI — hook receives the function as a parameter
 type Props = {
@@ -166,19 +172,23 @@ const useAppointmentForm = ({ isShiftValid }: Props) => {
   const valid = isShiftValid(shift); // hook has no dependency on any feature
 };
 
-// The container imports the portal and injects it
-// appointmentFormContainer.ts
+// ✅ The view imports the portal and injects it into the hook
+// appointmentForm.tsx
 import { ShiftPortal } from '@/features/shift/domain/shiftPortal';
 
-const mapDispatchToProps = () => ({
-  isShiftValid: ShiftPortal.isValid,
-});
+const AppointmentForm: React.FC<PropsFromRedux> = ({ ... }) => {
+  const { ... } = useAppointmentForm({
+    isShiftValid: ShiftPortal.isValid,
+  });
+  ...
+};
 ```
 
 ### ❌ Don't
 
 - Import from `*Facade.ts` in another feature — always go through the portal
-- Import from a portal directly inside a hook or view component — inject via container
+- Import from a portal directly inside a hook — inject via the view component
+- Import portal functions in containers — `mapDispatchToProps` is for Redux actions only
 - Expose internal helpers (field-level validators, error mutators) in the portal unless explicitly needed cross-feature
 
 ---
