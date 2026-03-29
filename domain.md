@@ -21,7 +21,8 @@ This layer does **not** deal with rendering, async operations, or UI logic — i
 src/features/x/domain/
 ├── xDataTypes.ts         # Domain interfaces and types (camelCase, no logic)
 ├── xModel.ts             # Validation and domain rules
-├── xFacade.ts            # Orchestrates calls to model and struct
+├── xFacade.ts            # Orchestrates calls to model and struct — internal to the feature
+├── xPortal.ts            # Curated public API for other features to consume
 └── struct/               # Factories to build structured data
     ├── builders.ts
     └── mutators.ts
@@ -88,7 +89,7 @@ export const buildOffice = (officeData: Partial<Office>): Office => ({
 
 A thin orchestrator that wires together `model/` and `struct/` calls. It does **not** contain logic itself. Returns a `FacadeResult<T, E>` so the hook can act on success or failure without knowing the internals.
 
-The facade is the **only file other features may import from the domain layer**.
+The facade is **internal to the feature** — only the feature's own hooks may import from it. Other features must go through the portal.
 
 ### ✅ Example
 
@@ -116,6 +117,36 @@ const submit = (shift: Shift): FacadeResult<Shift, FieldErrors> => {
 
 export const shiftFacade = { validate, isValid, submit };
 ```
+
+---
+
+## 🚪 `*Portal.ts`
+
+The portal is the **curated public API** of a feature's domain. It is the only file other features are allowed to import from this layer.
+
+The portal exposes a deliberate subset of facade functions — the ones that make sense to be public. Having something in the facade does not automatically mean it belongs in the portal. Conversely, in rare cases a portal may expose something not present in the facade if it serves a specific cross-feature contract.
+
+### Why portal instead of exposing the facade directly
+
+The facade may contain internal methods not intended for outside use. The portal makes the public contract explicit and intentional, rather than accidentally exposing everything.
+
+### ✅ Example
+
+```ts
+// src/features/shift/domain/shiftPortal.ts
+import { shiftFacade } from './shiftFacade';
+
+// Only expose what other features should consume
+export const ShiftPortal = {
+  isValid: shiftFacade.isValid,
+  toPayload: shiftFacade.toPayload,
+};
+```
+
+### ❌ Don't
+
+- Import from `*Facade.ts` in another feature — always go through the portal
+- Expose internal helpers (field-level validators, error mutators) in the portal unless explicitly needed cross-feature
 
 ---
 
@@ -152,6 +183,7 @@ Apply this pattern to **all persisted entities, without exceptions**. The value 
 - Access `store/`, `serializer/`, or anything async
 - Build rendering data or format for display
 - Import from `struct/` or `*Model` in hooks — hooks only import from the facade
+- Import from another feature's `*Facade.ts` — always go through its `*Portal.ts`
 
 ---
 

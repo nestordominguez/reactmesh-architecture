@@ -13,7 +13,12 @@ src/
 ├── features/
 │   └── <featureName>/
 │       ├── view/           # Rendering components and containers
-│       ├── domain/         # Business logic, validation, facades, models, structs
+│       ├── domain/         # Business logic, validation, facades, portals, models, structs
+│       │   ├── *DataTypes.ts
+│       │   ├── *Model.ts
+│       │   ├── *Facade.ts  # Internal — only used by this feature's hooks
+│       │   ├── *Portal.ts  # Public — the only entry point for other features
+│       │   └── struct/
 │       ├── store/          # Async orchestration and state management
 │       ├── presentation/   # Feature-specific display helpers
 │       ├── serializer/     # API ↔ domain mapping (private to the feature)
@@ -43,9 +48,10 @@ The container is the only place where action creators are imported outside `stor
 
 Centralized business logic layer. Contains:
 
-- **`model/`** – Validates input and enforces business rules.
-- **`struct/`** – Defines reusable data shapes via factories.
-- **`facade/`** – Orchestrates calls to model and struct. The only file other features may import from this layer.
+- **`*Model.ts`** – Validates input and enforces business rules. Private to the feature.
+- **`struct/`** – Defines reusable data shapes via factories. Private to the feature.
+- **`*Facade.ts`** – Orchestrates calls to model and struct. **Internal to the feature** — only used by the feature's own hooks.
+- **`*Portal.ts`** – Curated public API. The **only file other features may import** from this layer.
 - **`*DataTypes.ts`** – Domain interfaces and types. Always camelCase. No logic.
 
 This is the core of feature-level business decisions. It exposes what needs to be done — not how it will be rendered or stored.
