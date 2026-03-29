@@ -130,7 +130,7 @@ The portal exposes a deliberate subset of facade functions — the ones that mak
 
 The facade may contain internal methods not intended for outside use. The portal makes the public contract explicit and intentional, rather than accidentally exposing everything.
 
-### ✅ Example
+### ✅ Portal definition example
 
 ```ts
 // src/features/shift/domain/shiftPortal.ts
@@ -143,9 +143,42 @@ export const ShiftPortal = {
 };
 ```
 
+### How portals are consumed — dependency injection
+
+Portal functions must be consumed via **dependency injection**, not imported directly in hooks or view components. The container is the injection point: it imports from the portal and passes the functions as props or callbacks.
+
+This is consistent with the existing rule that hooks never import action creators directly — they receive them as parameters from the container. The same applies to portal functions.
+
+```ts
+// ❌ Direct import in a hook — creates coupling
+import { ShiftPortal } from '@/features/shift/domain/shiftPortal';
+
+const useAppointmentForm = () => {
+  const valid = ShiftPortal.isValid(shift); // hook is coupled to the portal
+};
+
+// ✅ DI — hook receives the function as a parameter
+type Props = {
+  isShiftValid: (shift: Shift) => boolean;
+};
+
+const useAppointmentForm = ({ isShiftValid }: Props) => {
+  const valid = isShiftValid(shift); // hook has no dependency on any feature
+};
+
+// The container imports the portal and injects it
+// appointmentFormContainer.ts
+import { ShiftPortal } from '@/features/shift/domain/shiftPortal';
+
+const mapDispatchToProps = () => ({
+  isShiftValid: ShiftPortal.isValid,
+});
+```
+
 ### ❌ Don't
 
 - Import from `*Facade.ts` in another feature — always go through the portal
+- Import from a portal directly inside a hook or view component — inject via container
 - Expose internal helpers (field-level validators, error mutators) in the portal unless explicitly needed cross-feature
 
 ---
