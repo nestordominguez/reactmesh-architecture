@@ -63,6 +63,7 @@ When a specific structure needs to be returned (e.g. for UI or API preparation),
 The **facade** coordinates both tasks:
 - It may run a validation by calling the model.
 - It may build a return structure by calling a `struct` factory.
+- It may derive or extract a value by calling a `struct` selector.
 - Or it may do both — depending on what the feature needs.
 
 The facade itself never contains logic — it simply knows **what to run and when**.

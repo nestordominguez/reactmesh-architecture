@@ -18,7 +18,7 @@ src/
 │       │   ├── *Model.ts
 │       │   ├── *Facade.ts  # Internal — only used by this feature's hooks
 │       │   ├── *Portal.ts  # Public — the only entry point for other features
-│       │   └── struct/
+│       │   └── struct/       # builders, mutators, selectors
 │       ├── store/          # Async orchestration and state management
 │       ├── presentation/   # Feature-specific display helpers
 │       ├── serializer/     # API ↔ domain mapping (private to the feature)
@@ -49,7 +49,10 @@ The container is the only place where action creators are imported outside `stor
 Centralized business logic layer. Contains:
 
 - **`*Model.ts`** – Validates input and enforces business rules. Private to the feature.
-- **`struct/`** – Defines reusable data shapes via factories. Private to the feature.
+- **`struct/`** – Defines pure data-structure helpers. Private to the feature.
+  - `builders.ts` creates new structures from defaults or partial input.
+  - `mutators.ts` reshapes existing structures into another structure or payload.
+  - `selectors.ts` extracts or derives values from existing structures without changing their shape.
 - **`*Facade.ts`** – Orchestrates calls to model and struct. **Internal to the feature** — only used by the feature's own hooks.
 - **`*Portal.ts`** – Curated public API. The **only file other features may import** from this layer.
 - **`*DataTypes.ts`** – Domain interfaces and types. Always camelCase. No logic.
@@ -119,7 +122,7 @@ User → view/ → hooks/ → domain/ (rules) → struct/ → store/ (async) →
 - **`view/`** triggers interactions and renders results
 - **`hooks/`** expose handlers; receive state and callbacks from the container
 - **`domain/`** validates input or resolves business logic
-- **`struct/`** builds shaped data
+- **`struct/`** builds, reshapes, or derives structured domain data
 - **`store/`** handles async work and side-effects
 - **`serializer/`** is used by `store/` for backend communication
 - **`presentation/`** formats data for display

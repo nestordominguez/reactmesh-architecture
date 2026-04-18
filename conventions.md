@@ -41,7 +41,7 @@ Each file must live in the correct layer based on its responsibility. This is no
 | Rendering | `view/` |
 | Form or UI event handlers | `hooks/` |
 | Business logic / validation | `domain/` (`model`, `facade`) |
-| Data shaping | `domain/struct/` |
+| Data shaping / derivation | `domain/struct/` |
 | API payload handling | `serializer/` |
 | Async orchestration | `store/` |
 | Feature-specific display helpers | `presentation/` |
@@ -62,6 +62,7 @@ The layers that exist must never be violated. No file goes loose at the feature 
 | Model (domain) | `Model` | `shiftModel.ts` |
 | Facade (domain) | `Facade` | `officeFacade.ts` |
 | Struct factory | no suffix | `buildOffice.ts` |
+| Struct selector | no suffix | `findOpenEntry.ts` or `selectors.ts` |
 | Redux slice | `Slice` | `appointmentSlice.ts` |
 | Saga | `Saga` | `shiftSaga.ts` |
 | Serializer | `Serializer` | `appointmentSerializer.ts` |
@@ -102,6 +103,7 @@ For genuinely shared utilities that operate only on primitives, use `src/shared/
 - Place business rules in components or hooks
 - Put files at the feature root that belong in a layer
 - Import `presentation/` helpers from another feature
+- Put domain collection queries in hooks or views when they belong in `domain/struct/selectors.ts`
 
 ---
 

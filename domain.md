@@ -25,7 +25,8 @@ src/features/x/domain/
 ├── xPortal.ts            # Curated public API for other features to consume
 └── struct/               # Factories to build structured data
     ├── builders.ts
-    └── mutators.ts
+    ├── mutators.ts
+    └── selectors.ts
 ```
 
 ---
@@ -69,7 +70,13 @@ export const validateEndTime = (start: string, end: string): string | undefined 
 
 ## 🔟 `struct/`
 
-Factories for structured data objects used in view, store, or facade. Does not validate — that's the model's job.
+Pure data-structure helpers used by the facade. `struct/` does not validate — that's the model's job — and it does not format for display.
+
+`struct/` has three roles:
+
+- `builders.ts` — creates new structures from defaults or partial input.
+- `mutators.ts` — transforms or reshapes existing structures into another structure or payload.
+- `selectors.ts` — derives or extracts values from existing structures without changing their shape.
 
 ### ✅ Example
 
@@ -81,6 +88,20 @@ export const buildOffice = (officeData: Partial<Office>): Office => ({
   floor: officeData.floor ?? '',
   shifts: officeData.shifts ?? [],
 });
+```
+
+### ✅ Selector example
+
+```ts
+// src/features/medicalRecordEntry/domain/struct/selectors.ts
+
+type OpenEntryCandidate = {
+  id: number;
+  status: 'open' | 'closed';
+};
+
+export const findOpenEntry = <T extends OpenEntryCandidate>(entries: T[]): Maybe<T> =>
+  entries.find((entry) => entry.status === 'open') ?? null;
 ```
 
 ---
