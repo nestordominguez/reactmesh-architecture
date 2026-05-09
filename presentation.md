@@ -112,7 +112,7 @@ export const statusToColor = (status: AppointmentStatus): string => {
 ## 🚫 Don't
 
 - Put business logic or validations here (those belong in `domain/`)
-- Format data for backend or persistence (use `serializer/` instead)
+- Format data for backend or persistence (use the serializer in `store/` instead)
 - Trigger async operations (belongs in `store/`)
 - Import another feature's `presentation/` helper — import their `view/` component instead
 - Put helpers that receive domain types in `shared/presentation/`

@@ -143,7 +143,9 @@ export const shiftFacade = { validate, isValid, submit };
 
 ## 🚪 `*Portal.ts`
 
-The portal is the **curated public API** of a feature's domain. It is the only file other features are allowed to import from this layer.
+> **The portal is optional.** Like every other layer in ReactMesh, it activates only when needed. A feature without cross-feature consumers does not have a Portal — the Facade is enough because nothing outside the feature imports it. The Portal appears the moment another feature needs to import from this one; only then is it decided what to expose. Never write an empty Portal "just in case."
+
+The portal is the **curated public API** of a feature's domain. When it exists, it is the only file other features are allowed to import from this layer.
 
 The portal exposes a deliberate subset of facade functions — the ones that make sense to be public. Having something in the facade does not automatically mean it belongs in the portal. Conversely, in rare cases a portal may expose something not present in the facade if it serves a specific cross-feature contract.
 
@@ -166,31 +168,34 @@ export const ShiftPortal = {
 
 ### How portals are consumed
 
-Hooks and view components are the same UI layer — both can import from a portal directly. The portal is the public entry point for cross-feature domain logic; importing it in a hook or a view component is equally valid.
-
-The container is never the right place for portal imports. `mapDispatchToProps` is reserved for Redux action creators. Cross-feature domain logic belongs in the UI layer (hooks/views), not in the Redux wiring layer.
+Hooks and view components are the same UI layer — both can import from a portal directly. The portal is the public entry point for cross-feature domain logic; importing it in a hook or a view component is equally valid, regardless of the store library you use.
 
 ```ts
-// ❌ Portal import in the container — wrong layer
-// appointmentFormContainer.ts
-const mapDispatchToProps = () => ({
-  isShiftValid: ShiftPortal.isValid, // mapDispatchToProps is for Redux actions, not domain logic
-});
-
-// ✅ Direct import in a hook — same UI layer as the view
+// ✅ Direct import in a hook (works with Redux, RTK Query, Zustand, anything)
 import { ShiftPortal } from '@/features/shift/domain/shiftPortal';
 
 const useAppointmentForm = () => {
   const valid = ShiftPortal.isValid(shift);
 };
 
-// ✅ Direct import in a view component — also valid
+// ✅ Direct import in a view component
 import { ShiftPortal } from '@/features/shift/domain/shiftPortal';
 
-const AppointmentForm: React.FC<PropsFromRedux> = ({ ... }) => {
+const AppointmentForm = () => {
   const isValid = ShiftPortal.isValid(shift);
-  ...
+  // ...
 };
+```
+
+#### When using the Redux + Container pattern (Option B in `view.md`)
+
+If you keep a Redux Container (`connect()` + `mapStateToProps`/`mapDispatchToProps`), the Container is **not** the right place for portal imports — `mapDispatchToProps` is reserved for Redux action creators. Cross-feature domain logic goes through the hook or directly in the view, not through the Redux wiring layer.
+
+```ts
+// ❌ Portal import in the container — wrong layer
+const mapDispatchToProps = () => ({
+  isShiftValid: ShiftPortal.isValid, // mapDispatchToProps is for Redux actions, not domain logic
+});
 ```
 
 ### ❌ Don't
@@ -231,7 +236,7 @@ Apply this pattern to **all persisted entities, without exceptions**. The value 
 ## ❌ Don't
 
 - Put UI logic, hooks, or presentation helpers in `domain/`
-- Access `store/`, `serializer/`, or anything async
+- Access `store/` (which now includes the serializer) or anything async
 - Build rendering data or format for display
 - Import from `struct/` or `*Model` in hooks — hooks only import from the facade
 - Import from another feature's `*Facade.ts` — always go through its `*Portal.ts`

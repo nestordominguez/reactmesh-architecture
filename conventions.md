@@ -42,10 +42,12 @@ Each file must live in the correct layer based on its responsibility. This is no
 | Form or UI event handlers | `hooks/` |
 | Business logic / validation | `domain/` (`model`, `facade`) |
 | Data shaping / derivation | `domain/struct/` |
-| API payload handling | `serializer/` |
-| Async orchestration | `store/` |
+| API payload mapping (serializer) | `store/` (sub-layer; lives next to the slice/saga/api) |
+| Async orchestration + BE calls | `store/` |
 | Feature-specific display helpers | `presentation/` |
 | Primitive-only display helpers (shared) | `src/shared/presentation/` |
+
+> **Migration callout:** existing features may still place serializers in a sibling `serializer/` folder. The new layout puts them inside `store/`. Both are valid until a separate migration task runs. See [`store.md`](./store.md).
 
 ### 🔑 Layer placement is non-negotiable
 
@@ -61,13 +63,19 @@ The layers that exist must never be violated. No file goes loose at the feature 
 |---|---|---|
 | Model (domain) | `Model` | `shiftModel.ts` |
 | Facade (domain) | `Facade` | `officeFacade.ts` |
+| Portal (domain, optional) | `Portal` | `shiftPortal.ts` |
 | Struct factory | no suffix | `buildOffice.ts` |
 | Struct selector | no suffix | `findOpenEntry.ts` or `selectors.ts` |
-| Redux slice | `Slice` | `appointmentSlice.ts` |
-| Saga | `Saga` | `shiftSaga.ts` |
-| Serializer | `Serializer` | `appointmentSerializer.ts` |
+| Redux Toolkit slice | `Slice` | `appointmentSlice.ts` |
+| Redux Saga | `Saga` | `shiftSaga.ts` |
+| RTK Query api | `Api` | `appointmentApi.ts` |
+| Zustand store | `Store` | `wizardStore.ts` |
+| State type | `StoreType` | `appointmentStoreType.ts` |
+| Serializer (lives in `store/`) | `Serializer` | `appointmentSerializer.ts` |
+| Serializer type (lives in `store/`) | `SerializerType` | `appointmentSerializerType.ts` |
 | Hook | `useX` | `useAssignAppointment.ts` |
 | Presentation helper | descriptive verb | `formatTime.ts`, `statusToColor.ts` |
+| Container (Redux + connect, optional) | `Container` | `appointmentContainer.ts` |
 
 ---
 
@@ -77,9 +85,9 @@ All logic lives within its corresponding `features/yourFeature/` directory.
 
 **Allowed cross-feature imports:**
 1. `view/` components
-2. `domain/*Facade`
+2. `domain/*Portal` (when it exists — Portal is optional, see [`domain.md`](./domain.md))
 
-**Everything else is private:** presentation, store, hooks, serializers, domain types.
+**Everything else is private:** presentation, store (slice/saga/api/serializer), hooks, domain types, model, facade.
 
 If feature A needs to display data owned by feature B, import a `view/` component from B — never B's `presentation/` helper.
 

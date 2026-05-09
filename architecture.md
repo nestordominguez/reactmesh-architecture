@@ -12,21 +12,27 @@ This document outlines how each part of the system is organized in the filesyste
 src/
 ├── features/
 │   └── <featureName>/
-│       ├── view/           # Rendering components and containers
-│       ├── domain/         # Business logic, validation, facades, portals, models, structs
+│       ├── view/           # Rendering components (and optional containers if using Redux + connect())
+│       ├── domain/         # Business logic, validation, facades, models, structs
 │       │   ├── *DataTypes.ts
 │       │   ├── *Model.ts
 │       │   ├── *Facade.ts  # Internal — only used by this feature's hooks
-│       │   ├── *Portal.ts  # Public — the only entry point for other features
-│       │   └── struct/       # builders, mutators, selectors
-│       ├── store/          # Async orchestration and state management
+│       │   ├── *Portal.ts  # OPTIONAL — only when other features need to import from this one
+│       │   └── struct/     # builders, mutators, selectors
+│       ├── store/          # Async orchestration, state management, and serializer
+│       │   ├── *Slice.ts / *Api.ts / *Store.ts   # depending on library (Redux Toolkit / RTK Query / Zustand)
+│       │   ├── *Saga.ts                          # if using Saga
+│       │   ├── *StoreType.ts
+│       │   ├── *Serializer.ts                    # API ↔ domain mapping (lives inside store/)
+│       │   └── *SerializerType.ts
 │       ├── presentation/   # Feature-specific display helpers
-│       ├── serializer/     # API ↔ domain mapping (private to the feature)
 │       └── hooks/          # UI event handlers
 ├── shared/
 │   └── presentation/       # Primitive-only display helpers shared across features
 └── ...
 ```
+
+> **Note:** `serializer/` as a sibling of `store/` was the previous layout. It now lives inside `store/`. Existing features still using `features/*/serializer/` are valid until a separate migration task runs.
 
 ---
 
@@ -35,12 +41,12 @@ src/
 Holds only components used for rendering.
 There is no business logic or state orchestration here.
 
-In React + Redux applications, `view/` is split into two files per component:
+The component itself is always pure: it receives data and callbacks via props (or via hooks) and renders. The wiring to the store is **store-agnostic**:
 
-- **`<componentName>.tsx`** — pure presentational component; receives everything via props
-- **`<componentName>Container.ts`** — connects to Redux via `connect()`; provides `mapStateToProps` and `mapDispatchToProps`
+- **With Redux + `connect()`** (optional pattern): `view/` is split into `<componentName>.tsx` (pure) and `<componentName>Container.ts` (connects to Redux via `connect()`).
+- **With hooks-direct** (Redux Toolkit, RTK Query, Zustand, TanStack Query): the component or its hook calls `useDispatch`/`useSelector`/`useQuery`/`useStore` directly — no Container needed.
 
-The container is the only place where action creators are imported outside `store/`. Hooks receive callbacks as parameters injected by the container — they never call `useDispatch` or `useSelector` directly.
+Both patterns are valid. The Container pattern is no longer required; pick the one that matches your library and team preference. What is non-negotiable is **Rule 1 from [`hooks.md`](./hooks.md): BE calls live in `store/`** — the hook or container only triggers them, never contains them.
 
 ---
 
@@ -54,7 +60,7 @@ Centralized business logic layer. Contains:
   - `mutators.ts` reshapes existing structures into another structure or payload.
   - `selectors.ts` extracts or derives values from existing structures without changing their shape.
 - **`*Facade.ts`** – Orchestrates calls to model and struct. **Internal to the feature** — only used by the feature's own hooks.
-- **`*Portal.ts`** – Curated public API. The **only file other features may import** from this layer.
+- **`*Portal.ts`** – **OPTIONAL.** Curated public API; appears only when another feature needs to import from this one. When it exists, it is the only file other features may import from this layer. See [`domain.md`](./domain.md) for the full rule.
 - **`*DataTypes.ts`** – Domain interfaces and types. Always camelCase. No logic.
 
 This is the core of feature-level business decisions. It exposes what needs to be done — not how it will be rendered or stored.
@@ -68,7 +74,7 @@ Handles application state and asynchronous orchestration **only when needed**.
 - Can use **Redux**, **Zustand**, **Jotai**, or any store solution — ReactMesh is store-agnostic.
 - May contain **sagas**, **thunks**, or simple state stores, depending on the feature's complexity.
 - If a request is made to fetch data that will be stored globally, the orchestration **must happen inside `store/`**.
-- Sagas must not call UI libraries (toast, alerts) directly — dispatch an action instead and let a dedicated feature handle the side-effect.
+- Async orchestration code (sagas, RTK Query callbacks, Zustand actions, thunks) must not call UI libraries (toast, alerts, navigation) directly — dispatch an action instead and let a dedicated feature handle the side-effect.
 
 ---
 
@@ -92,14 +98,18 @@ Pure helpers that operate only on primitives (`string`, `number`, `Date`, `Dayjs
 
 ---
 
-## 🔹 `serializer/`
+## 🔹 Serializer (lives inside `store/`)
 
-Transforms raw API data into domain models and vice versa.
+Transforms raw API data into domain models and vice versa. **The serializer is a sub-layer of `store/`, not a sibling layer.** Files: `store/<feature>Serializer.ts` + `store/<feature>SerializerType.ts`.
+
+> **Migration callout:** existing codebases may still have `features/*/serializer/` folders. Decision landed; migration is a separate task — both locations are valid until the migration runs.
 
 - **Private to the feature** — never imported by other features.
-- Always called in the saga before dispatching success actions.
+- Always called from the orchestration code (saga, `transformResponse`, async action) before the data leaves `store/`.
 - snake_case → camelCase mapping is done manually, field by field. Automatic converters are forbidden.
 - Defines a local `Api*` type that mirrors the raw API response; the output is the domain model.
+
+See [`store.md`](./store.md) for full rules and per-library examples.
 
 ---
 
@@ -108,23 +118,24 @@ Transforms raw API data into domain models and vice versa.
 Custom hooks that expose UI handlers to `view/` components.
 
 - One responsibility per hook file.
-- Never use `useDispatch` or `useSelector` directly — state and callbacks come as parameters.
+- May access the store directly (`useDispatch`, `useSelector`, `useQuery`, `useStore`) — the **two non-negotiable rules** are: (1) BE calls live in `store/` (hooks trigger, never define), (2) hooks don't hide domain logic (validation/transformation/decisions live in `domain/facade`).
 - Handlers extracted from views always go here.
+
+See [`hooks.md`](./hooks.md) for the full rules and examples.
 
 ---
 
 ## 🔁 Data & Logic Flow
 
 ```text
-User → view/ → hooks/ → domain/ (rules) → struct/ → store/ (async) → serializer/ → presentation/ → view/
+User → view/ → hooks/ → domain/ (rules) → struct/ → store/ (async + serializer) → presentation/ → view/
 ```
 
 - **`view/`** triggers interactions and renders results
-- **`hooks/`** expose handlers; receive state and callbacks from the container
+- **`hooks/`** expose handlers; access the store directly (or receive state/callbacks from a Container if using the optional Redux + `connect()` pattern)
 - **`domain/`** validates input or resolves business logic
 - **`struct/`** builds, reshapes, or derives structured domain data
-- **`store/`** handles async work and side-effects
-- **`serializer/`** is used by `store/` for backend communication
+- **`store/`** handles async work, side-effects, and the API ↔ domain serializer (the serializer is a sub-layer of `store/`)
 - **`presentation/`** formats data for display
 - The cycle returns to `view/` with final data to render
 

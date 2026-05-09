@@ -20,20 +20,36 @@ It’s a **declarative, logic-free layer** focused exclusively on rendering. All
 
 ---
 
-## 🔑 Component + Container Pattern (Redux)
+## 🔑 Wiring the View to the Store
 
-When using Redux, each component is split into two files:
+The view component itself is always pure: it renders from props (or from a hook). How that data and those callbacks reach the component is **store-agnostic** — choose the pattern that fits your library.
+
+### Option A — Hooks-direct (recommended for new code)
+
+The component calls a feature hook; the hook accesses the store directly (`useDispatch`/`useSelector`/`useQuery`/`useStore`). No Container file. Works with Redux Toolkit, RTK Query, Zustand, TanStack Query, etc.
+
+```tsx
+// src/features/appointment/view/Appointment.tsx
+import { useAppointmentList } from '../hooks/useAppointmentList';
+
+const Appointment = () => {
+  const { appointments, loading, loadAppointments, deleteAppointment } = useAppointmentList();
+  // ...render
+};
+```
+
+The hook owns the store wiring. The component is pure rendering. Two files instead of three.
+
+### Option B — Component + Container Pattern (Redux + `connect()`, optional)
+
+Valid when you prefer to keep the view fully Redux-unaware via `connect()`. Each component splits into two files:
 
 ```text
 view/
 └── <componentName>/
-    ├── <componentName>.tsx          # Pure presentational component — no Redux
+    ├── <componentName>.tsx          # Pure presentational component — receives props
     └── <componentName>Container.ts  # connect() only — no logic
 ```
-
-**`<componentName>.tsx`** receives everything via props. No `useSelector`, no `useDispatch`.
-
-**`<componentName>Container.ts`** is the only place where action creators are imported outside `store/`. It wires the component to Redux via `connect()`.
 
 ```ts
 // appointmentContainer.ts
@@ -50,24 +66,24 @@ const mapDispatchToProps = {
 export default connect(mapStateToProps, mapDispatchToProps)(Appointment);
 ```
 
-The view component receives `appointments`, `loading`, `loadAppointments`, and `deleteAppointment` as plain props — it has no knowledge of Redux. This makes it trivial to test by rendering with mock props.
+This pattern is **no longer required** — it remains valid where it already exists, and is one acceptable choice for new Redux features. Hooks-direct (Option A) is simpler and works with any store library.
 
-**Hooks receive callbacks as params injected by the container** — they never call `useDispatch` directly. See [`hooks/`](./hooks.md) for details.
+**The non-negotiable rule, regardless of pattern**: Rule 1 from [`hooks.md`](./hooks.md) — BE calls live in `store/`. The hook (or container) only triggers them; never contains them.
 
 ---
 
 ## ✅ Do
 
 - Use only props or `hooks/` to get handlers and state
-- Split each connected component into component + container
+- If using the Redux + Container pattern (Option B), split each connected component into component + container
 - Keep render logic clean and focused
 
 ## 🚫 Don’t
 
-- Call business logic or validations directly
-- Perform async operations
-- Format or transform data inside components
-- Use `useSelector` or `useDispatch` in view components or hooks
+- Call business logic or validations directly inside the view component (move to `domain/facade`)
+- Perform async operations or BE calls inside the view component (move to `store/`)
+- Format or transform data inside components (move to `presentation/`)
+- Use `useSelector` or `useDispatch` directly inside the view component — the component should be pure; route store access through the hook (Option A) or the container (Option B). Hooks themselves *may* use `useSelector`/`useDispatch` — see [`hooks.md`](./hooks.md).
 
 ---
 
@@ -93,7 +109,7 @@ const OfficesPage = () => {
 
 ---
 
-## 🔧 Agregado a OfficesPage
+## 🔧 Anti-pattern: OfficesPage
 
 ```tsx
 // ⚠️ Incorrect example: Violates the architecture by calling logic directly
@@ -117,7 +133,7 @@ const OfficesPage = () => {
 }
 
 ```
-❌ Esta vista maneja lógica asincrónica (fetch) y muta estado interno directamente (useState), lo cual rompe con los principios de ReactMesh.
+❌ This view handles async logic (`fetch`) and mutates internal state directly (`useState`), which breaks the ReactMesh principles. The async I/O belongs in `store/` and the state should come from a hook.
 
 > This view only handles UI and user actions. It does **not** manage state or logic directly.
 
@@ -142,7 +158,7 @@ const ShiftForm = () => {
 }
 ```
 
-## 🔧 Agregado a ShiftForm
+## 🔧 Anti-pattern: ShiftForm
 
 ```tsx
 // ⚠️ Incorrect example: Validates directly and formats data inside the view
@@ -178,7 +194,7 @@ const ShiftForm = () => {
 }
 ```
 ---
-❌ Esta implementación mezcla validaciones, formatting y llamadas a la API directamente en la vista.
+❌ This implementation mixes validation, formatting, and API calls directly inside the view. Validation belongs in `domain/facade`, formatting in `presentation/`, and the API call in `store/`.
 
 ## 🧪 Example: Appointment Assignment Modal
 
@@ -197,7 +213,7 @@ const AssignAppointmentModal = () => {
 }
 ```
 
-## 🔧 Agregado a AssignAppointmentModal
+## 🔧 Anti-pattern: AssignAppointmentModal
 
 ```tsx
 // ⚠️ Incorrect example: Handles side effects and state directly
@@ -232,7 +248,7 @@ const AssignAppointmentModal = () => {
 }
 ```
 ---
-❌ Esta vista hace múltiples fetch, guarda estado y orquesta operaciones que deberían ser manejadas por store/, hooks/ y domain/.
+❌ This view performs multiple `fetch` calls, holds state, and orchestrates operations that should be handled by `store/`, `hooks/`, and `domain/`.
 
 ## 🧵 Notes
 

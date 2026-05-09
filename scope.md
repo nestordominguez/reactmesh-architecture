@@ -27,9 +27,8 @@ ReactMesh only governs files and logic located inside the `features/yourFeature/
 
 * `view/` — UI components
 * `domain/` — Business logic
-* `store/` — Async orchestration & state
+* `store/` — Async orchestration, state, and the API-data-mapping serializer
 * `presentation/` — Display transformations
-* `serializer/` — API data mapping
 * `hooks/` — Feature-scoped UI logic
 
 By keeping boundaries clear, ReactMesh allows teams to adopt it gradually or alongside other patterns outside `features/`.
