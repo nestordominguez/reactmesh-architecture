@@ -111,7 +111,21 @@ export const findOpenEntry = <T extends OpenEntryCandidate>(entries: T[]): Maybe
 A thin orchestrator that wires together `model/` and `struct/` calls. It does **not** contain logic itself — specifically:
 
 - **No validation logic in the facade.** Validation lives in the model. The facade may re-export model functions so hooks have a single import surface, but it must not WRITE validation rules.
+- **No shape transformations in the facade.** Functions that map `A → B` (e.g. `toFormValues`, `toPayload`) live in `struct/mutators`. The facade may re-export them, never define them.
+- **No boolean queries/comparisons in the facade.** Functions like `isDirty(current, snapshot)` derive a boolean from existing data — they belong in `struct/selectors` (or `*Model.ts` if you consider them validation-flavored). Re-export, don't define.
 - **No methods with action verb names.** The facade does not perform actions; it composes. Names like `submit`, `save`, `delete`, `send` are misleading because the actual side-effect lives in the saga / hook. Use past-participles or descriptive nouns (`validated`, `payload`, `prepared`) for composition methods that return a `FacadeResult`.
+
+### Checklist: where does each function go?
+
+| The function… | Belongs in |
+|---|---|
+| Validates a rule (atomic or aggregate) | `*Model.ts` |
+| Returns a boolean derived from data (`isValid`, `isDirty`, `isReadyToSubmit`) | `*Model.ts` or `struct/selectors` |
+| Transforms one shape into another (`A → B`) | `struct/mutators` |
+| Builds a new object from defaults/inputs | `struct/builders` |
+| Composes the above and returns `FacadeResult<T, E>` | **Facade — the ONLY case** |
+
+If the function body does any work besides calling model/struct/builders, the function is in the wrong place.
 
 Returns a `FacadeResult<T, E>` so the hook can act on success or failure without knowing the internals.
 
