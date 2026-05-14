@@ -182,6 +182,7 @@ The hook accesses the store directly (Rule 1 satisfied — the BE call is in the
 - Mix form state, sync, and dispatch in the same hook (violates SRP)
 - Perform rendering or return JSX
 - Re-derive types from another hook with `Parameters<typeof hook>[n]` — use named types from the facade
+- **Name a function `use*` if it is not a real React hook.** Pure derivations and side-effect-free utilities never get the `use` prefix. The prefix is a public promise of Rules-of-Hooks compatibility — using it on a non-hook will eventually be called from a non-React context (a saga generator, a worker, a script) and React Doctor / lint rules will flag it. If the function takes only primitives or domain inputs and returns a value, it belongs in `struct/selectors`, `struct/mutators`, or `presentation/` — not in `hooks/`.
 
 ---
 

@@ -116,6 +116,7 @@ export const statusToColor = (status: AppointmentStatus): string => {
 - Trigger async operations (belongs in `store/`)
 - Import another feature's `presentation/` helper — import their `view/` component instead
 - Put helpers that receive domain types in `shared/presentation/`
+- **Import anything from your own feature's `domain/`** (model, facade, struct, types). `presentation/` is a strict downstream layer of `view/`, not of `domain/`. If a presentation helper and a model validator need to share a primitive predicate (e.g. `/[A-Z]/.test(s)`), **duplicate the regex in both files**. The duplication is intentional: model owns the rule's _meaning_ ("uppercase required"), presentation owns the rule's _display_ ("strong vs medium"). If the predicate truly has no domain semantics, extract it to `src/shared/presentation/` and let both layers import from there.
 
 ---
 
