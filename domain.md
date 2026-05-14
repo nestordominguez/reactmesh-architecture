@@ -76,7 +76,7 @@ Pure data-structure helpers used by the facade. `struct/` does not validate — 
 
 - `builders.ts` — creates new structures from defaults or partial input.
 - `mutators.ts` — transforms or reshapes existing structures into another structure or payload.
-- `selectors.ts` — derives or extracts values from existing structures without changing their shape.
+- `selectors.ts` — derives or extracts **non-boolean** data from existing structures without changing their shape (`find*`, `filter*`, `count*`, `group*`, `sort*`). Boolean queries (`is*`, `has*`, `isDirty`, `canSubmit`) belong in the model.
 
 ### ✅ Example
 
@@ -112,7 +112,7 @@ A thin orchestrator that wires together `model/` and `struct/` calls. It does **
 
 - **No validation logic in the facade.** Validation lives in the model. The facade may re-export model functions so hooks have a single import surface, but it must not WRITE validation rules.
 - **No shape transformations in the facade.** Functions that map `A → B` (e.g. `toFormValues`, `toPayload`) live in `struct/mutators`. The facade may re-export them, never define them.
-- **No boolean queries/comparisons in the facade.** Functions like `isDirty(current, snapshot)` derive a boolean from existing data — they belong in `struct/selectors` (or `*Model.ts` if you consider them validation-flavored). Re-export, don't define.
+- **No boolean queries/comparisons in the facade.** Functions like `isDirty(current, snapshot)` derive a boolean from existing data — they belong in `*Model.ts`. Re-export, don't define.
 - **No methods with action verb names.** The facade does not perform actions; it composes. Names like `submit`, `save`, `delete`, `send` are misleading because the actual side-effect lives in the saga / hook. Use past-participles or descriptive nouns (`validated`, `payload`, `prepared`) for composition methods that return a `FacadeResult`.
 
 ### Checklist: where does each function go?
@@ -120,7 +120,8 @@ A thin orchestrator that wires together `model/` and `struct/` calls. It does **
 | The function… | Belongs in |
 |---|---|
 | Validates a rule (atomic or aggregate) | `*Model.ts` |
-| Returns a boolean derived from data (`isValid`, `isDirty`, `isReadyToSubmit`) | `*Model.ts` or `struct/selectors` |
+| Returns a boolean derived from data (`is*`, `has*`, `isDirty`, `canSubmit`) | `*Model.ts` |
+| Derives non-boolean data from structures (`find*`, `filter*`, `count*`, `group*`, `sort*`) | `struct/selectors` |
 | Transforms one shape into another (`A → B`) | `struct/mutators` |
 | Builds a new object from defaults/inputs | `struct/builders` |
 | Composes the above and returns `FacadeResult<T, E>` | **Facade — the ONLY case** |
