@@ -108,18 +108,25 @@ export const findOpenEntry = <T extends OpenEntryCandidate>(entries: T[]): Maybe
 
 ## 🔟 `*Facade.ts`
 
-A thin orchestrator that wires together `model/` and `struct/` calls. It does **not** contain logic itself. Returns a `FacadeResult<T, E>` so the hook can act on success or failure without knowing the internals.
+A thin orchestrator that wires together `model/` and `struct/` calls. It does **not** contain logic itself — specifically:
+
+- **No validation logic in the facade.** Validation lives in the model. The facade may re-export model functions so hooks have a single import surface, but it must not WRITE validation rules.
+- **No methods with action verb names.** The facade does not perform actions; it composes. Names like `submit`, `save`, `delete`, `send` are misleading because the actual side-effect lives in the saga / hook. Use past-participles or descriptive nouns (`validated`, `payload`, `prepared`) for composition methods that return a `FacadeResult`.
+
+Returns a `FacadeResult<T, E>` so the hook can act on success or failure without knowing the internals.
 
 The facade is **internal to the feature** — only the feature's own hooks may import from it. Other features must go through the portal.
 
 ### ✅ Example
 
 ```ts
-// src/features/shift/domain/shiftFacade.ts
+// src/features/shift/domain/shiftModel.ts
 
-type FieldErrors = Partial<Record<keyof Shift, string>>;
+// Validation — atomic + aggregate + derived queries — ALL in the model.
+export const validateStartTime = (time: string): string | undefined => { ... };
+export const validateEndTime = (start: string, end: string): string | undefined => { ... };
 
-const validate = (shift: Shift): FieldErrors => {
+export const validate = (shift: Shift): FieldErrors => {
   const errors: FieldErrors = {};
   const startError = validateStartTime(shift.startTime);
   if (startError) errors.startTime = startError;
@@ -128,16 +135,46 @@ const validate = (shift: Shift): FieldErrors => {
   return errors;
 };
 
-const isValid = (shift: Shift): boolean => Object.keys(validate(shift)).length === 0;
+export const isValid = (shift: Shift): boolean => Object.keys(validate(shift)).length === 0;
+```
 
-const submit = (shift: Shift): FacadeResult<Shift, FieldErrors> => {
-  const errors = validate(shift);
+```ts
+// src/features/shift/domain/shiftFacade.ts
+
+import { isValid as modelIsValid, validate as modelValidate } from './shiftModel';
+import { buildShiftPayload } from './struct/mutators';
+
+type FieldErrors = Partial<Record<keyof Shift, string>>;
+
+// Composition only — no validation logic, no action-named methods.
+// `validated` is a past-participle: the facade is NOT performing the submit,
+// it returns the validated payload (or errors) for the hook to act on.
+const validated = (shift: Shift): FacadeResult<Shift, FieldErrors> => {
+  const errors = modelValidate(shift);
   if (Object.keys(errors).length > 0) return { success: false, error: errors };
   return { success: true, data: buildShiftPayload(shift) };
 };
 
-export const shiftFacade = { validate, isValid, submit };
+export const shiftFacade = {
+  validate: modelValidate, // re-export from model — single import surface for hooks
+  isValid: modelIsValid,
+  validated,
+};
 ```
+
+### ❌ Anti-pattern (do not copy)
+
+```ts
+// src/features/shift/domain/shiftFacade.ts — WRONG
+
+// validation aggregator inside the facade
+const validate = (shift) => { ... aggregate atomic rules ... };
+
+// action-named method that does not perform the action
+const submit = (shift) => { ... validate + build ... };
+```
+
+The aggregator and the query belong in the model. The action name lies: the function doesn't submit, it just returns data for the hook (which then dispatches to the saga, which then performs the actual side-effect).
 
 ---
 
