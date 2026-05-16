@@ -107,6 +107,7 @@ For genuinely shared utilities that operate only on primitives, use `src/shared/
 ## 🚫 Don't
 
 - Use PascalCase or snake\_case for file or folder names
+- Define multiple components in a single file — a component with its own props type is a separate unit, even if unexported
 - Mix rendering with logic in the same file
 - Place business rules in components or hooks
 - Put files at the feature root that belong in a layer

@@ -80,6 +80,7 @@ This pattern is **no longer required** — it remains valid where it already exi
 
 ## 🚫 Don’t
 
+- **Define multiple components in a single file.** A component with its own props type is a distinct unit — even if it’s only used by one parent and is not exported. Extract it to its own file (in the same feature’s `view/`, or in the design system if it’s generic).
 - Call business logic or validations directly inside the view component (move to `domain/facade`)
 - Perform async operations or BE calls inside the view component (move to `store/`)
 - Format or transform data inside components (move to `presentation/`)
@@ -249,6 +250,43 @@ const AssignAppointmentModal = () => {
 ```
 ---
 ❌ This view performs multiple `fetch` calls, holds state, and orchestrates operations that should be handled by `store/`, `hooks/`, and `domain/`.
+
+## 🔧 Anti-pattern: Multiple Components in One File
+
+```tsx
+// ⚠️ Incorrect: Field is a separate component with its own props, defined in the same file
+
+type FieldProps = {
+  id: string;
+  label: string;
+  value: string;
+  error?: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+};
+
+const Field: FC<FieldProps> = ({ id, label, value, error, onChange }) => (
+  <div className="form-field">
+    <label htmlFor={id}>{label}</label>
+    <input id={id} value={value} onChange={onChange} />
+    {error && <span>{error}</span>}
+  </div>
+);
+
+const ProfilePage: FC = () => {
+  // ...
+  return (
+    <form>
+      <Field id="name" label="Name" value={form.name} onChange={handleChange} />
+      <Field id="email" label="Email" value={form.email} onChange={handleChange} />
+    </form>
+  );
+};
+
+export default ProfilePage;
+```
+❌ `Field` has its own props type and rendering responsibility — it is a distinct component that belongs in its own file. If it's generic (label + input + error), it belongs in the design system. If it's feature-specific, it goes in a separate file within the feature's `view/`.
+
+---
 
 ## 🧵 Notes
 
