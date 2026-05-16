@@ -15,7 +15,7 @@ It’s a **declarative, logic-free layer** focused exclusively on rendering. All
 
 - Rendering UI components
 - Calling `hooks/` to receive handlers or local state
-- Delegating state, business logic, and UI formatting to `store/`, `domain/`, and `presentation/`
+- Delegating state, business logic, and UI formatting to `store/`, `domain/`, and `view/presentation/`
 - Keeping all components **stateless and declarative**
 
 ---

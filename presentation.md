@@ -1,6 +1,6 @@
-# 🎨 `presentation/`
+# 🎨 `view/presentation/`
 
-The `presentation/` layer is where UI-specific formatting logic lives. It helps keep `view/` components declarative and clean by moving all logic related to **how things should look** out of the render tree.
+The `presentation/` layer is where UI-specific formatting logic lives. It lives **inside `view/`** as a sub-directory, co-located with the view layer that consumes it. It helps keep `view/` components declarative and clean by moving all logic related to **how things should look** out of the render tree.
 
 ---
 
@@ -15,7 +15,7 @@ The `presentation/` layer is where UI-specific formatting logic lives. It helps 
 ## 📂 Structure
 
 ```text
-src/features/x/presentation/
+src/features/x/view/presentation/
 └── formatX.ts     # One function per file, named after what it does
 ```
 
@@ -28,7 +28,7 @@ src/features/x/presentation/
 | Input type | Where the helper lives |
 |---|---|
 | Primitives only (`string`, `number`, `Date`) | `src/shared/presentation/` |
-| A domain type from feature X | `features/x/presentation/` |
+| A domain type from feature X | `features/x/view/presentation/` |
 
 ### ✅ Examples
 
@@ -62,10 +62,10 @@ const MedicalRecordHeader = () => (
 
 ```tsx
 // ❌ medicalRecord imports patient's presentation helper — breaks feature isolation
-import { formatPatientName } from '@/features/patient/presentation/formatPatientName';
+import { formatPatientName } from '@/features/patient/view/presentation/formatPatientName';
 ```
 
-The `presentation/` layer is **private to the feature**. The only public surface of a feature is `view/` components and `domain/*Facade`.
+The `view/presentation/` layer is **private to the feature**. The only public surface of a feature is `view/` components and `domain/*Portal`.
 
 ---
 
@@ -96,7 +96,7 @@ export const formattedTime = (isoDate: string): string =>
 ### Transformer: Map status to color
 
 ```ts
-// src/features/appointment/presentation/statusToColor.ts
+// src/features/appointment/view/presentation/statusToColor.ts
 export const statusToColor = (status: AppointmentStatus): string => {
   switch (status) {
     case 'confirmed': return 'green';
@@ -114,7 +114,7 @@ export const statusToColor = (status: AppointmentStatus): string => {
 - Put business logic or validations here (those belong in `domain/`)
 - Format data for backend or persistence (use the serializer in `store/` instead)
 - Trigger async operations (belongs in `store/`)
-- Import another feature's `presentation/` helper — import their `view/` component instead
+- Import another feature's `view/presentation/` helper — import their `view/` component instead
 - Put helpers that receive domain types in `shared/presentation/`
 - **Import anything from your own feature's `domain/`** (model, facade, struct, types). `presentation/` is a strict downstream layer of `view/`, not of `domain/`. If a presentation helper and a model validator need to share a primitive predicate (e.g. `/[A-Z]/.test(s)`), **duplicate the regex in both files**. The duplication is intentional: model owns the rule's _meaning_ ("uppercase required"), presentation owns the rule's _display_ ("strong vs medium"). If the predicate truly has no domain semantics, extract it to `src/shared/presentation/` and let both layers import from there.
 

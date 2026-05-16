@@ -1,6 +1,6 @@
 # 🏗️ Architecture Overview
 
-ReactMesh is structured around four main pillars — `view`, `domain`, `store`, and `presentation` — plus shared utilities and serializers that live outside the feature tree.
+ReactMesh is structured around three main pillars — `view`, `domain`, and `store` — with `presentation` co-located inside `view/`, plus shared utilities and serializers that live inside `store/`.
 
 This document outlines how each part of the system is organized in the filesystem, and how responsibilities are distributed between layers.
 
@@ -13,6 +13,7 @@ src/
 ├── features/
 │   └── <featureName>/
 │       ├── view/           # Rendering components (and optional containers if using Redux + connect())
+│       │   └── presentation/  # Feature-specific display helpers (co-located with view)
 │       ├── domain/         # Business logic, validation, facades, models, structs
 │       │   ├── *DataTypes.ts
 │       │   ├── *Model.ts
@@ -25,7 +26,6 @@ src/
 │       │   ├── *StoreType.ts
 │       │   ├── *Serializer.ts                    # API ↔ domain mapping (lives inside store/)
 │       │   └── *SerializerType.ts
-│       ├── presentation/   # Feature-specific display helpers
 │       └── hooks/          # UI event handlers
 ├── shared/
 │   └── presentation/       # Primitive-only display helpers shared across features
@@ -78,15 +78,15 @@ Handles application state and asynchronous orchestration **only when needed**.
 
 ---
 
-## 🔹 `presentation/`
+## 🔹 `view/presentation/`
 
-Feature-specific formatting and display helpers.
+Feature-specific formatting and display helpers, co-located inside `view/`.
 
 - Private to the feature. Other features must not import from here.
 - One function per file, named after what it does.
 - **The domain of the input data determines where the helper lives:**
   - Operates on primitives only → `src/shared/presentation/`
-  - Receives a domain type → `features/<owner>/presentation/`
+  - Receives a domain type → `features/<owner>/view/presentation/`
 
 ---
 
@@ -94,7 +94,7 @@ Feature-specific formatting and display helpers.
 
 Pure helpers that operate only on primitives (`string`, `number`, `Date`, `Dayjs`) and are needed by multiple features.
 
-`shared/presentation/` is not a miscellaneous drawer. The moment a helper receives a domain type, it belongs in the owning feature's `presentation/`.
+`shared/presentation/` is not a miscellaneous drawer. The moment a helper receives a domain type, it belongs in the owning feature's `view/presentation/`.
 
 ---
 

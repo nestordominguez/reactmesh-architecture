@@ -44,7 +44,7 @@ Each file must live in the correct layer based on its responsibility. This is no
 | Data shaping / derivation | `domain/struct/` |
 | API payload mapping (serializer) | `store/` (sub-layer; lives next to the slice/saga/api) |
 | Async orchestration + BE calls | `store/` |
-| Feature-specific display helpers | `presentation/` |
+| Feature-specific display helpers | `view/presentation/` |
 | Primitive-only display helpers (shared) | `src/shared/presentation/` |
 
 > **Migration callout:** existing features may still place serializers in a sibling `serializer/` folder. The new layout puts them inside `store/`. Both are valid until a separate migration task runs. See [`store.md`](./store.md).
@@ -87,9 +87,9 @@ All logic lives within its corresponding `features/yourFeature/` directory.
 1. `view/` components
 2. `domain/*Portal` (when it exists — Portal is optional, see [`domain.md`](./domain.md))
 
-**Everything else is private:** presentation, store (slice/saga/api/serializer), hooks, domain types, model, facade.
+**Everything else is private:** view/presentation, store (slice/saga/api/serializer), hooks, domain types, model, facade.
 
-If feature A needs to display data owned by feature B, import a `view/` component from B — never B's `presentation/` helper.
+If feature A needs to display data owned by feature B, import a `view/` component from B — never B's `view/presentation/` helper.
 
 For genuinely shared utilities that operate only on primitives, use `src/shared/presentation/`.
 
@@ -111,7 +111,7 @@ For genuinely shared utilities that operate only on primitives, use `src/shared/
 - Mix rendering with logic in the same file
 - Place business rules in components or hooks
 - Put files at the feature root that belong in a layer
-- Import `presentation/` helpers from another feature
+- Import `view/presentation/` helpers from another feature
 - Put domain collection queries in hooks or views when they belong in `domain/struct/selectors.ts`
 
 ---
