@@ -81,10 +81,15 @@ This pattern is **no longer required** — it remains valid where it already exi
 ## 🚫 Don’t
 
 - **Define multiple components in a single file.** A component with its own props type is a distinct unit — even if it’s only used by one parent and is not exported. Extract it to its own file (in the same feature’s `view/`, or in the design system if it’s generic).
-- Call business logic or validations directly inside the view component (move to `domain/facade`)
+- Call business logic, validations, or **boolean/domain predicates** directly inside the view component. Any `x.length > 0`, `status === 'active'`, or `is*`/`has*` derivation is a domain query → it lives in `domain/` (the model/facade) and reaches the view as a prop.
 - Perform async operations or BE calls inside the view component (move to `store/`)
-- Format or transform data inside components (move to `presentation/`)
+- Format or transform data inside components — **including computed display strings in JSX, in any form**: template literals, ternaries that return labels, and inline lookup maps (`value → label`). All of these belong in `presentation/`.
+- **Style inline.** No `style={{}}`, no `sx`, no styling prop carrying layout/color/spacing/typography (icon size included). Visual styling lives in the feature stylesheet as classes, or via component props. The only inline style allowed is a genuinely runtime-dynamic value (e.g. `width: ${pct}%`).
 - Use `useSelector` or `useDispatch` directly inside the view component — the component should be pure; route store access through the hook (Option A) or the container (Option B). Hooks themselves *may* use `useSelector`/`useDispatch` — see [`hooks.md`](./hooks.md).
+
+> **Rules are invariants, not syntax bans.** Each “Don’t” above names a *responsibility that does not belong in the view*; the listed syntaxes (`sx`, template literals, ternaries, lookup maps, `style={{}}`) are **non-exhaustive examples**. When a new syntax appears, ask “is this view computing, styling, or deciding?” — not “is this the exact token the rule named?”. A rule phrased as “no `sx`” silently stops applying the moment the stack drops MUI; a rule phrased as “no inline styling” keeps holding.
+
+> **Architecture overrides “match existing style”.** If the surrounding view already violates these rules, do **not** propagate the violation into new or edited code. “Surgical change” refers to the *scope* of the edit, never to copying a local anti-pattern. Follow the rule in what you add; fix the construct you touch.
 
 ---
 
