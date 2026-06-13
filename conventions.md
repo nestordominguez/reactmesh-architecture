@@ -83,13 +83,17 @@ The layers that exist must never be violated. No file goes loose at the feature 
 
 All logic lives within its corresponding `features/yourFeature/` directory.
 
-**Allowed cross-feature imports:**
+**Allowed cross-feature imports (public, imported directly):**
 1. `view/` components
-2. `domain/*Portal` (when it exists — Portal is optional, see [`domain.md`](./domain.md))
+2. `view/presentation/` presenters (prefer wrapping in a component — see below)
+3. `store/` — slices, actions, **selectors**, state types (reading any feature's store from any feature is valid and direct)
+4. `serializer/` (public by definition — it maps the BE↔FE contract)
+5. `domain/*DataTypes.ts`
+6. `hooks/` — not private; very unlikely another feature needs them, but callable if it does
 
-**Everything else is private:** view/presentation, store (slice/saga/api/serializer), hooks, domain types, model, facade.
+**Private to the feature:** everything in `domain/` **except** `*DataTypes` — i.e. `*Model`, `*Facade`, `struct/`. The **only** way to expose these cross-feature is the Portal ([`domain.md`](./domain.md)), and that is rare — **avoid the Portal at all costs.** Never create a Portal to expose selectors, serializers or presenters; those are imported directly.
 
-If feature A needs to display data owned by feature B, import a `view/` component from B — never B's `view/presentation/` helper.
+If feature A needs to display data owned by feature B, prefer importing a `view/` component from B; importing B's presenter directly is allowed but usually avoidable.
 
 For genuinely shared utilities that operate only on primitives, use `src/shared/presentation/`.
 
@@ -111,7 +115,7 @@ For genuinely shared utilities that operate only on primitives, use `src/shared/
 - Mix rendering with logic in the same file
 - Place business rules in components or hooks
 - Put files at the feature root that belong in a layer
-- Import `view/presentation/` helpers from another feature
+- Default to importing another feature's `view/presentation/` helper — prefer their `view/` component (the direct presenter import is allowed, just usually avoidable)
 - Put domain collection queries in hooks or views when they belong in `domain/struct/selectors.ts`
 
 ---

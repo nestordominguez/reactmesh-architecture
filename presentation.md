@@ -47,12 +47,12 @@ export const formatDoctorName = (doctor: Doctor): string =>
 
 ---
 
-## 🔑 Cross-Feature Display: Use Components, Not Helpers
+## 🔑 Cross-Feature Display: Prefer Components Over Helpers
 
-If feature A needs to display data owned by feature B, **import a `view/` component** from feature B — never its `presentation/` helper.
+If feature A needs to display data owned by feature B, the **preferred** path is to import a `view/` component from feature B and let it render the data.
 
 ```tsx
-// ✅ medicalRecord imports a Patient view component
+// ✅ Preferred: medicalRecord imports a Patient view component
 import PatientSummary from '@/features/patient/view/patientSummary/patientSummary';
 
 const MedicalRecordHeader = () => (
@@ -61,11 +61,12 @@ const MedicalRecordHeader = () => (
 ```
 
 ```tsx
-// ❌ medicalRecord imports patient's presentation helper — breaks feature isolation
+// ⚠️ Allowed, but usually avoidable: importing patient's presenter directly.
+// Prefer wrapping it in a Patient component (above) and consuming the component.
 import { formatPatientName } from '@/features/patient/view/presentation/formatPatientName';
 ```
 
-The `view/presentation/` layer is **private to the feature**. The only public surface of a feature is `view/` components and `domain/*Portal`.
+Importing another feature's `view/presentation/` helper directly is **permitted** — but it is very likely you can avoid it by generating a component (in the owner feature) that uses the presenter, and consuming that component instead. Reach for the direct presenter import only when a component wrapper genuinely doesn't fit.
 
 ---
 
@@ -114,7 +115,7 @@ export const statusToColor = (status: AppointmentStatus): string => {
 - Put business logic or validations here (those belong in `domain/`)
 - Format data for backend or persistence (use the serializer in `store/` instead)
 - Trigger async operations (belongs in `store/`)
-- Import another feature's `view/presentation/` helper — import their `view/` component instead
+- Reach for another feature's `view/presentation/` helper as the *default* — prefer importing their `view/` component instead (the direct presenter import is allowed, just usually avoidable)
 - Put helpers that receive domain types in `shared/presentation/`
 - **Import anything from your own feature's `domain/`** (model, facade, struct, types). `presentation/` is a strict downstream layer of `view/`, not of `domain/`. If a presentation helper and a model validator need to share a primitive predicate (e.g. `/[A-Z]/.test(s)`), **duplicate the regex in both files**. The duplication is intentional: model owns the rule's _meaning_ ("uppercase required"), presentation owns the rule's _display_ ("strong vs medium"). If the predicate truly has no domain semantics, extract it to `src/shared/presentation/` and let both layers import from there.
 

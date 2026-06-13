@@ -22,7 +22,7 @@ src/features/x/domain/
 ├── xDataTypes.ts         # Domain interfaces and types (camelCase, no logic)
 ├── xModel.ts             # Validation and domain rules
 ├── xFacade.ts            # Orchestrates calls to model and struct — internal to the feature
-├── xPortal.ts            # Curated public API for other features to consume
+├── xPortal.ts            # RARE — only to expose private domain logic (model/facade/struct) cross-feature. Avoid at all costs.
 └── struct/               # Factories to build structured data
     ├── builders.ts
     ├── mutators.ts
@@ -195,9 +195,9 @@ The aggregator and the query belong in the model. The action name lies: the func
 
 ## 🚪 `*Portal.ts`
 
-> **The portal is optional.** Like every other layer in ReactMesh, it activates only when needed. A feature without cross-feature consumers does not have a Portal — the Facade is enough because nothing outside the feature imports it. The Portal appears the moment another feature needs to import from this one; only then is it decided what to expose. Never write an empty Portal "just in case."
+> **The portal is the rare exception, not the rule — avoid it at all costs.** The portal is NOT the cross-feature entry point. A feature's `store/` (slices, actions, selectors, state), `serializer/`, `view/presentation/` presenters and `domain/*DataTypes` are **public and imported directly** from their layer. The portal exists for one narrow purpose: to expose **domain logic that lives in the private part of `domain/`** — `*Model`, `*Facade`, `struct/` — when another feature genuinely needs it. That almost never happens. Before creating a Portal, rule it out: does the other feature actually need a selector / serializer (public), a `*DataType` (public), or a component that wraps a presenter? Never write an empty Portal "just in case."
 
-The portal is the **curated public API** of a feature's domain. When it exists, it is the only file other features are allowed to import from this layer.
+When a portal does exist, it is the only way to reach the **private** domain logic of the feature (`*Model`/`*Facade`/`struct/`). It does not gate the public layers — those are imported directly.
 
 The portal exposes a deliberate subset of facade functions — the ones that make sense to be public. Having something in the facade does not automatically mean it belongs in the portal. Conversely, in rare cases a portal may expose something not present in the facade if it serves a specific cross-feature contract.
 
@@ -220,7 +220,7 @@ export const ShiftPortal = {
 
 ### How portals are consumed
 
-Hooks and view components are the same UI layer — both can import from a portal directly. The portal is the public entry point for cross-feature domain logic; importing it in a hook or a view component is equally valid, regardless of the store library you use.
+In the rare case a portal exists, hooks and view components are the same UI layer — both can import from it directly. The portal is the entry point only for the feature's **private domain logic**; everything public (store/selectors, serializers, presenters, `*DataTypes`) is imported straight from its own layer, no portal involved.
 
 ```ts
 // ✅ Direct import in a hook (works with Redux, RTK Query, Zustand, anything)

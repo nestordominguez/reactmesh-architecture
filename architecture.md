@@ -18,7 +18,7 @@ src/
 │       │   ├── *DataTypes.ts
 │       │   ├── *Model.ts
 │       │   ├── *Facade.ts  # Internal — only used by this feature's hooks
-│       │   ├── *Portal.ts  # OPTIONAL — only when other features need to import from this one
+│       │   ├── *Portal.ts  # RARE — only to expose private domain logic (model/facade/struct) cross-feature; avoid
 │       │   └── struct/     # builders, mutators, selectors
 │       ├── store/          # Async orchestration, state management, and serializer
 │       │   ├── *Slice.ts / *Api.ts / *Store.ts   # depending on library (Redux Toolkit / RTK Query / Zustand)
@@ -60,8 +60,8 @@ Centralized business logic layer. Contains:
   - `mutators.ts` reshapes existing structures into another structure or payload.
   - `selectors.ts` extracts or derives values from existing structures without changing their shape.
 - **`*Facade.ts`** – Orchestrates calls to model and struct. **Internal to the feature** — only used by the feature's own hooks.
-- **`*Portal.ts`** – **OPTIONAL.** Curated public API; appears only when another feature needs to import from this one. When it exists, it is the only file other features may import from this layer. See [`domain.md`](./domain.md) for the full rule.
-- **`*DataTypes.ts`** – Domain interfaces and types. Always camelCase. No logic.
+- **`*Portal.ts`** – **RARE — avoid at all costs.** The only way to expose the feature's *private* domain logic (`*Model`/`*Facade`/`struct/`) cross-feature, in the rare case another feature genuinely needs it. It is NOT the general cross-feature entry point: store/selectors, serializers, presenters and `*DataTypes` are public and imported directly. See [`domain.md`](./domain.md) for the full rule.
+- **`*DataTypes.ts`** – Domain interfaces and types. Always camelCase. No logic. **Public** — other features may import these directly (they travel with public selectors anyway).
 
 This is the core of feature-level business decisions. It exposes what needs to be done — not how it will be rendered or stored.
 
@@ -82,7 +82,7 @@ Handles application state and asynchronous orchestration **only when needed**.
 
 Feature-specific formatting and display helpers, co-located inside `view/`.
 
-- Private to the feature. Other features must not import from here.
+- Importable cross-feature directly, but **prefer wrapping the presenter in a `view/` component** and consuming that component instead (see [`presentation.md`](./presentation.md)). The direct presenter import is allowed, just usually avoidable.
 - One function per file, named after what it does.
 - **The domain of the input data determines where the helper lives:**
   - Operates on primitives only → `src/shared/presentation/`
@@ -104,7 +104,7 @@ Transforms raw API data into domain models and vice versa. **The serializer is a
 
 > **Migration callout:** existing codebases may still have `features/*/serializer/` folders. Decision landed; migration is a separate task — both locations are valid until the migration runs.
 
-- **Private to the feature** — never imported by other features.
+- **Public by definition** — it maps the BE↔FE contract, so other features may import it directly. In practice its only consumer is the feature's own orchestration code, but it is not a privacy boundary.
 - Always called from the orchestration code (saga, `transformResponse`, async action) before the data leaves `store/`.
 - snake_case → camelCase mapping is done manually, field by field. Automatic converters are forbidden.
 - Defines a local `Api*` type that mirrors the raw API response; the output is the domain model.
