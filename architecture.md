@@ -32,7 +32,7 @@ src/
 └── ...
 ```
 
-> **Note:** `serializer/` as a sibling of `store/` was the previous layout. It now lives inside `store/`. Existing features still using `features/*/serializer/` are valid until a separate migration task runs.
+> **Note:** the serializer lives **inside `store/`** — mandatory, not optional. A sibling `serializer/` folder is a layer-placement violation. New/modified serializers MUST be in `store/` (**BLOCKER**); the ~30 pre-existing `features/*/serializer/` folders are tracked tech debt to migrate (nit until moved), not a valid alternative layout.
 
 ---
 
@@ -102,7 +102,7 @@ Pure helpers that operate only on primitives (`string`, `number`, `Date`, `Dayjs
 
 Transforms raw API data into domain models and vice versa. **The serializer is a sub-layer of `store/`, not a sibling layer.** Files: `store/<feature>Serializer.ts` + `store/<feature>SerializerType.ts`.
 
-> **Migration callout:** existing codebases may still have `features/*/serializer/` folders. Decision landed; migration is a separate task — both locations are valid until the migration runs.
+> **Location is mandatory:** the serializer must live inside `store/`; a sibling `serializer/` folder is a layer-placement violation, not an equivalent. New/modified serializers MUST be in `store/` (**BLOCKER**); the ~30 pre-existing `features/*/serializer/` folders are tracked tech debt to migrate (nit until moved).
 
 - **Public by definition** — it maps the BE↔FE contract, so other features may import it directly. In practice its only consumer is the feature's own orchestration code, but it is not a privacy boundary.
 - Always called from the orchestration code (saga, `transformResponse`, async action) before the data leaves `store/`.

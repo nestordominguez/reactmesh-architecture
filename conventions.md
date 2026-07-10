@@ -47,7 +47,7 @@ Each file must live in the correct layer based on its responsibility. This is no
 | Feature-specific display helpers | `view/presentation/` |
 | Primitive-only display helpers (shared) | `src/shared/presentation/` |
 
-> **Migration callout:** existing features may still place serializers in a sibling `serializer/` folder. The new layout puts them inside `store/`. Both are valid until a separate migration task runs. See [`store.md`](./store.md).
+> **Location is mandatory:** the serializer lives inside `store/` — a sibling `serializer/` folder is a layer-placement violation, not an alternative. New/modified serializers MUST be in `store/` (**BLOCKER**); the ~30 pre-existing `serializer/` folders are tracked tech debt to migrate (nit until moved), not valid. See [`store.md`](./store.md).
 
 ### 🔑 Layer placement is non-negotiable
 
@@ -87,7 +87,7 @@ All logic lives within its corresponding `features/yourFeature/` directory.
 1. `view/` components
 2. `view/presentation/` presenters (prefer wrapping in a component — see below)
 3. `store/` — slices, actions, **selectors**, state types (reading any feature's store from any feature is valid and direct)
-4. `serializer/` (public by definition — it maps the BE↔FE contract)
+4. `store/` serializer (`store/<feature>Serializer.ts`) — public by definition (it maps the BE↔FE contract); imported directly from `store/`, never via a Portal
 5. `domain/*DataTypes.ts`
 6. `hooks/` — not private; very unlikely another feature needs them, but callable if it does
 

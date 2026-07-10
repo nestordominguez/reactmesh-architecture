@@ -195,7 +195,7 @@ The aggregator and the query belong in the model. The action name lies: the func
 
 ## 🚪 `*Portal.ts`
 
-> **The portal is the rare exception, not the rule — avoid it at all costs.** The portal is NOT the cross-feature entry point. A feature's `store/` (slices, actions, selectors, state), `serializer/`, `view/presentation/` presenters and `domain/*DataTypes` are **public and imported directly** from their layer. The portal exists for one narrow purpose: to expose **domain logic that lives in the private part of `domain/`** — `*Model`, `*Facade`, `struct/` — when another feature genuinely needs it. That almost never happens. Before creating a Portal, rule it out: does the other feature actually need a selector / serializer (public), a `*DataType` (public), or a component that wraps a presenter? Never write an empty Portal "just in case."
+> **The portal is the rare exception, not the rule — avoid it at all costs.** The portal is NOT the cross-feature entry point. A feature's `store/` (slices, actions, selectors, state, **serializer**), `view/presentation/` presenters and `domain/*DataTypes` are **public and imported directly** from their layer. The portal exists for one narrow purpose: to expose **domain logic that lives in the private part of `domain/`** — `*Model`, `*Facade`, `struct/` — when another feature genuinely needs it. That almost never happens. Before creating a Portal, rule it out: does the other feature actually need a selector / serializer (public), a `*DataType` (public), or a component that wraps a presenter? Never write an empty Portal "just in case."
 
 When a portal does exist, it is the only way to reach the **private** domain logic of the feature (`*Model`/`*Facade`/`struct/`). It does not gate the public layers — those are imported directly.
 
@@ -220,7 +220,7 @@ export const ShiftPortal = {
 
 ### How portals are consumed
 
-In the rare case a portal exists, hooks and view components are the same UI layer — both can import from it directly. The portal is the entry point only for the feature's **private domain logic**; everything public (store/selectors, serializers, presenters, `*DataTypes`) is imported straight from its own layer, no portal involved.
+In the rare case a portal exists, hooks and view components are the same UI layer — both can import from it directly. The portal is the entry point only for the feature's **private domain logic**; everything public (`store/` selectors and serializer, presenters, `*DataTypes`) is imported straight from its own layer, no portal involved.
 
 ```ts
 // ✅ Direct import in a hook (works with Redux, RTK Query, Zustand, anything)

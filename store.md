@@ -69,9 +69,11 @@ store/
 
 The serializer's only consumer is the saga (or RTK Query's `transformResponse`, or Zustand's async action) of the same feature — and ReactMesh's own rules already prohibit it from being imported anywhere else. A folder for code with a single co-located consumer is ceremony. Keeping the serializer next to the saga that uses it removes one mental decision ("is it in `serializer/` or `store/`?") and makes the feature self-contained: everything that touches the BE lives in one place.
 
-### Migration callout
+### Location is mandatory (not optional)
 
-> **Decision landed; existing `features/*/serializer/` folders migrate in a separate task — both locations are valid until then.** Code following the old layout is not a violation; new features should use the new layout. When the migration task runs, all existing serializers move into `store/`.
+> **The serializer lives inside `store/` — this is mandatory, not a stylistic choice.** A sibling `serializer/` folder is a **layer-placement violation**, never an equivalent alternative. Any *new or modified* serializer MUST be in `store/` (**BLOCKER**). The ~30 pre-existing `features/*/serializer/` folders are **tracked tech debt to migrate**, reported as a nit until moved — they do **not** make the old layout valid.
+>
+> **Public ≠ own folder.** The serializer is public (any feature imports it directly, never via a Portal), but visibility is independent of location: a file inside `store/` is still public. Import it from `store/`: `import { xFromBe } from '@/features/x/store/xSerializer'`.
 
 ### Serializer rules (unchanged)
 
