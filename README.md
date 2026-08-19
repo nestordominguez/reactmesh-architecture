@@ -38,10 +38,10 @@ When you need validation or business rules, add what's necessary.
 
 ```text
 features/medicalRecords/
-├── view/              # UI components
 ├── domain/            # Business logic & validation
 ├── store/             # State & async operations
-├── presentation/      # Display formatting
+├── view/              # UI rendering
+│   └── presentation/  # Display formatting — part of the view
 └── hooks/             # UI event handlers
 ```
 
@@ -91,16 +91,19 @@ It's a **frontend-native architecture** that grows organically with your actual 
 
 ## 🧱 Core Principles
 
-ReactMesh is built around **4 optional layers** that activate only when needed:
+ReactMesh is built around **3 optional layers** that activate only when needed:
 
-| Layer            | When to Use                                                              |
-| ---------------- | ------------------------------------------------------------------------ |
-| **View**         | Always (for rendering components)                                        |
-| **Domain**       | When you have business logic, validation, or complex data transformation |
-| **Store**        | When you need global state or async operations                           |
-| **Presentation** | When you need UI formatting separate from business logic                 |
+| Layer      | When to Use                                                              |
+| ---------- | ------------------------------------------------------------------------ |
+| **Domain** | When you have business logic, validation, or complex data transformation |
+| **Store**  | When you need global state or async operations                           |
+| **View**   | Always (for rendering components)                                        |
 
 **🔑 Key insight:** Each layer is **optional**. Add them only when your feature actually needs the separation.
+
+> **Presentation is not a fourth layer.** Display formatting lives *inside* the view
+> (`view/presentation/`), because formatting a value for the screen is a rendering concern,
+> not a peer of domain and store. Same for `hooks/`: it's where UI event handlers go, not a layer.
 
 ---
 
@@ -162,7 +165,7 @@ features/userProfile/
 - [Domain Layer](./domain.md) - Business logic & validation
 - [Store Layer](./store.md) - State & async operations
 - [View Layer](./view.md) - UI rendering components
-- [Presentation Layer](./presentation.md) - Display formatting
+  - [Presentation](./presentation.md) - Display formatting, inside the view
 
 ### ⚙️ Practical Guides
 
